@@ -1,0 +1,12 @@
+public with sharing abstract class Evaluator {
+
+	
+	//PUBLIC METHODS
+	public abstract void startEvaluation();
+	
+	
+	// ENUM 
+	public Enum State {
+		Successful, Acceptable, Failed
+	}
+}
