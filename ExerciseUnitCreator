@@ -1,0 +1,101 @@
+public with sharing class ExerciseUnitCreator {
+
+	private List<TrainingDay__c> newDays;
+	private Map<Id, List<Exercise__c>> exercisesByTraining;
+	
+	
+	// CONSTRUCTOR
+	
+	public ExerciseUnitCreator(List<TrainingDay__c> days) {
+		this.newDays = days;
+		exercisesByTraining = queryNecessaryExercises();
+	}
+	
+	
+	// PUBLIC METHODS
+	
+	public void start() {
+		List<ExerciseUnit__c> newUnits = new List<ExerciseUnit__c>();
+		
+		for(TrainingDay__c day : newDays) {
+			List<ExerciseUnit__c> exerciseUnits = createExerciseUnitsFor(day);
+			
+			newUnits.addAll(exerciseUnits);
+		}
+		
+		insert newUnits;
+	}
+	
+	
+	
+	// PRIVATE METHODS
+	
+	private Map<Id, List<Exercise__c>> queryNecessaryExercises() {
+		List<Training__c> trainings = queryRelevantTrainings();
+		Map<Id, Exercise__c> exercisesById = queryRelevantExercises(trainings);
+		
+		Map<Id, List<Exercise__c>> resultMap = new Map<Id, List<Exercise__c>>();
+		
+		for(Training__c t : trainings) {
+			List<Exercise__c> exercises = new List<Exercise__c>();
+			
+			for(TrainingExerciseRelation__c ter : t.Exercises__r) {
+				Exercise__c e = exercisesById.get(ter.mdr_Exercise__c);
+				exercises.add(e);
+			}
+			
+			resultMap.put(t.Id, exercises);
+		}
+		
+		return resultMap;
+	}
+	
+	
+	private List<Training__c> queryRelevantTrainings() {
+		Set<Id> trainingIds = new Set<Id>();
+		
+		for(TrainingDay__c d : newDays) {
+			trainingIds.add(d.lkp_Training__c);
+		}
+		
+		return new List<Training__c>([SELECT Id,(
+											  	 SELECT mdr_Exercise__c
+											  	 FROM Exercises__r
+											 	)
+								   	  FROM Training__c 
+								   	  WHERE Id IN :trainingIds]);
+	}
+	
+	
+	private Map<Id, Exercise__c> queryRelevantExercises(List<Training__c> trainings) {
+		Set<Id> exerciseIds = new Set<Id>();
+		
+		for(Training__c t : trainings) {
+			for(TrainingExerciseRelation__c ter : t.Exercises__r) {
+				exerciseIds.add(ter.mdr_Exercise__c);
+			}
+		}	
+			
+		return new Map<Id, Exercise__c>([SELECT Id, Name
+									  	 FROM Exercise__c 
+									  	 WHERE Id IN :exerciseIds]);
+	}
+	
+	
+	private List<ExerciseUnit__c> createExerciseUnitsFor(TrainingDay__c d) {
+		List<ExerciseUnit__c> results = new List<ExerciseUnit__c>();
+		
+		List<Exercise__c> exercises = exercisesByTraining.get(d.lkp_Training__c);
+				
+		for(Exercise__c e : exercises) {
+			ExerciseUnit__c unit = new ExerciseUnit__c();
+			unit.lkp_Exercise__c = e.Id;
+			unit.mdr_TrainingDay__c = d.Id;
+			unit.Name = e.Name;
+			
+			results.add(unit);
+		}
+		
+		return results;
+	}
+}
