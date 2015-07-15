@@ -7,6 +7,6 @@ public with sharing abstract class Evaluator {
 	
 	// ENUM 
 	public Enum State {
-		Successful, Acceptable, Failed
+		Successful, Acceptable, Failed, Naja
 	}
 }
