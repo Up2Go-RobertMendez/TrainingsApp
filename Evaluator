@@ -1,7 +1,7 @@
 public with sharing abstract class Evaluator {
 
 	
-	//PUBLIC METHODS to test sth
+	//PUBLIC METHODS
 	public abstract void startEvaluation();
 	
 	
